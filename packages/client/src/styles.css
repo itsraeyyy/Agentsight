@@ -1,0 +1,198 @@
+:root {
+  --as-charcoal: #1E1E1E;
+  --as-beige: #E9E1D0; 
+  --as-orange: #E57B2A; 
+  --as-shadow: #B8B1A9;
+  --as-mono: 'JetBrains Mono', 'Fira Code', 'Geist Mono', ui-monospace, monospace;
+  --as-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+#agentsight-root * {
+  box-sizing: border-box;
+}
+
+/* ─── TOOLBAR / DOCK ─── */
+.agentsight-dock {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  background: var(--as-beige);
+  border: 1px solid var(--as-charcoal);
+  box-shadow: 4px 4px 0px var(--as-shadow);
+  border-radius: 0px; 
+  color: var(--as-charcoal);
+  font-family: var(--as-sans);
+}
+
+.agentsight-dock-brand {
+  padding: 8px 16px;
+  font-family: var(--as-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-right: 1px solid var(--as-charcoal);
+  background: var(--as-charcoal);
+  color: var(--as-beige);
+}
+
+.agentsight-dock-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--as-charcoal);
+  color: var(--as-charcoal);
+  font-family: var(--as-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: none; /* Strict, snappy UX */
+}
+
+.agentsight-dock-btn:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.agentsight-dock-btn.active {
+  background: var(--as-charcoal);
+  color: var(--as-beige);
+}
+
+/* ─── RUNTIME FREEZE BUTTON ─── */
+.agentsight-freeze-btn {
+  background: var(--as-charcoal);
+  color: var(--as-beige);
+}
+.agentsight-freeze-btn.active {
+  background: var(--as-orange);
+  color: var(--as-charcoal);
+  font-weight: 600;
+}
+
+/* ─── OVERLAYS ─── */
+.agentsight-highlight-overlay {
+  background: rgba(229, 123, 42, 0.1); /* Muted orange tint */
+  border: 1px solid var(--as-orange);
+  transition: none;
+}
+
+.agentsight-area-preview {
+  background: rgba(229, 123, 42, 0.1);
+  border: 1px dashed var(--as-charcoal);
+  border-radius: 0px;
+  transition: none;
+}
+
+/* ─── MARKERS ─── */
+.agentsight-marker {
+  background: var(--as-orange);
+  color: var(--as-charcoal);
+  width: 24px;
+  height: 24px;
+  border-radius: 0; /* Square markers */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--as-mono);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--as-charcoal);
+  box-shadow: 2px 2px 0px var(--as-shadow);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.agentsight-clarification {
+  background: var(--as-beige);
+  border: 1px solid var(--as-charcoal);
+  padding: 8px 12px;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 4px 4px 0px var(--as-shadow);
+  pointer-events: auto;
+}
+
+.agentsight-clarification-label {
+  font-family: var(--as-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--as-charcoal);
+  opacity: 0.7;
+  letter-spacing: 0.1em;
+}
+
+.agentsight-clarification-text {
+  font-size: 12px;
+  color: var(--as-charcoal);
+  font-weight: 500;
+}
+
+/* ─── POPOVER ─── */
+.agentsight-popover {
+  position: absolute;
+  background: var(--as-beige);
+  border: 1px solid var(--as-charcoal);
+  padding: 12px;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 6px 6px 0px var(--as-shadow);
+  pointer-events: auto;
+  z-index: 2147483647;
+  min-width: 280px;
+}
+
+.agentsight-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agentsight-popover-title {
+  font-family: var(--as-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--as-charcoal);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.agentsight-popover-component {
+  font-family: var(--as-mono);
+  font-size: 10px;
+  color: var(--as-orange);
+  background: var(--as-charcoal);
+  padding: 2px 6px;
+}
+
+.agentsight-popover-input {
+  background: #FFFFFF;
+  border: 1px solid var(--as-charcoal);
+  padding: 8px;
+  color: var(--as-charcoal);
+  font-family: var(--as-sans);
+  font-size: 13px;
+  resize: none;
+  outline: none;
+  border-radius: 0;
+}
+
+.agentsight-popover-input:focus {
+  border-color: var(--as-orange);
+}
+
+.agentsight-popover-footer {
+  display: flex;
+  justify-content: flex-end;
+}
