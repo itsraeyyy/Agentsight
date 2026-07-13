@@ -1,17 +1,28 @@
 {
   "name": "@itsraeyy/agentsight-client",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Visual feedback bridge for AI coding agents",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
   "bin": {
-    "agentsight": "./bin/init.js"
+    "agentsight-client": "./bin/init.js"
   },
   "files": [
     "dist",
     "bin"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').copyFileSync('src/styles.css', 'dist/styles.css')\"",
     "dev": "tsc -w"
   },
   "peerDependencies": {
