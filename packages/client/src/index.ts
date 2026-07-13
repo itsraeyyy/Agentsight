@@ -1,6 +1,6 @@
 import './styles.css';
 
-export { AgentationProvider } from './components/AgentationProvider';
+export { AgentSightProvider } from './components/AgentSightProvider';
 export { useElementPicker } from './hooks/useElementPicker';
 export { useTextSelection } from './hooks/useTextSelection';
 export { useAreaSelection } from './hooks/useAreaSelection';

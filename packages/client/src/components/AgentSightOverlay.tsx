@@ -11,14 +11,13 @@ import { getReactComponentName } from '../utils/reactFiberWalker';
 import { extractStyles } from '../utils/styleExtractor';
 import { getDOMLCA, getNamedReactAncestor } from '../utils/lcaTraversal';
 
-interface AgentationOverlayProps {
+interface AgentSightOverlayProps {
   isFrozen: boolean;
   onClose: () => void;
 }
 
-export const AgentationOverlay: React.FC<AgentationOverlayProps> = ({ isFrozen, onClose }) => {
+export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, onClose }) => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  // Use Partial<Annotation> for pending so we don't need a note yet
   const [pendingAnnotation, setPendingAnnotation] = useState<Partial<Annotation> | null>(null);
 
   const handlePick = useCallback((el: HTMLElement) => {
@@ -30,7 +29,7 @@ export const AgentationOverlay: React.FC<AgentationOverlayProps> = ({ isFrozen, 
       element: el,
       selector,
       reactComponent: getReactComponentName(el) || undefined,
-      styles: extractStyles(el) as any,
+      styles: extractStyles(el) as unknown as Annotation['styles'],
       html: el.outerHTML,
     };
     setPendingAnnotation(newAnn);
@@ -76,15 +75,15 @@ export const AgentationOverlay: React.FC<AgentationOverlayProps> = ({ isFrozen, 
     const finalAnn: Annotation = { ...pendingAnnotation, note } as Annotation;
     setAnnotations(prev => [...prev, finalAnn]);
     
-    const payload = compileMarkdown([finalAnn as any], 'standard');
+    const payload = compileMarkdown([finalAnn], 'standard');
     navigator.clipboard.writeText(payload).catch(() => {});
 
-    // Ping MCP Express Server
+    // Send payload to the AgentSight MCP bridge
     fetch('http://localhost:3010/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ markdownPayload: payload })
-    }).catch(err => console.warn('[Agentation] MCP POST failed', err));
+    }).catch(err => console.warn('[AgentSight] MCP POST failed', err));
 
     setPendingAnnotation(null);
   };
@@ -93,11 +92,13 @@ export const AgentationOverlay: React.FC<AgentationOverlayProps> = ({ isFrozen, 
     setPendingAnnotation(null);
   };
 
-  const pendingRect = pendingAnnotation?.element ? pendingAnnotation.element.getBoundingClientRect() : null;
+  const pendingRect = pendingAnnotation?.element
+    ? pendingAnnotation.element.getBoundingClientRect()
+    : null;
 
   return (
     <div id="agentsight-root">
-      {/* Matte, Structural Border Overlay indicating mode is active */}
+      {/* Border overlay indicating annotation mode is active */}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -129,17 +130,7 @@ export const AgentationOverlay: React.FC<AgentationOverlayProps> = ({ isFrozen, 
 
       {pendingAnnotation && pendingRect && (
         <FeedbackPopover
-          targetRect={{
-            top: pendingRect.top,
-            bottom: pendingRect.top + pendingRect.height,
-            left: pendingRect.left,
-            right: pendingRect.left + pendingRect.width,
-            width: pendingRect.width,
-            height: pendingRect.height,
-            x: pendingRect.left,
-            y: pendingRect.top,
-            toJSON: () => {}
-          }}
+          targetRect={pendingRect}
           reactComponent={pendingAnnotation.reactComponent}
           onSubmit={handleSubmit}
           onCancel={handleCancel}

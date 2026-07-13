@@ -8,7 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 // --- EPHEMERAL STATE ---
 // This is our "database". It wipes clean whenever the process restarts.
 let currentVisualFeedback: string | null = null;
-let feedbackHistory: string[] = [];
+const feedbackHistory: string[] = [];
 
 // --- 1. SET UP THE EXPRESS BRIDGE (Receives data from browser) ---
 const app = express();
@@ -25,17 +25,17 @@ app.post('/api/feedback', (req, res) => {
   currentVisualFeedback = markdownPayload;
   feedbackHistory.push(markdownPayload);
   
-  console.error(`[Agentation MCP] Received new visual feedback payload.`);
+  console.error(`[AgentSight MCP] Received new visual feedback payload.`);
   return res.json({ success: true });
 });
 
 app.listen(3010, () => {
-  console.error('[Agentation MCP] Browser receiver listening on http://localhost:3010');
+  console.error('[AgentSight MCP] Browser receiver listening on http://localhost:3010');
 });
 
 // --- 2. SET UP THE MCP SERVER (Provides data to the AI IDE) ---
 const server = new McpServer({
-  name: "agentation-local",
+  name: "agentsight-local",
   version: "1.0.0",
 });
 
@@ -71,10 +71,10 @@ server.tool(
 );
 
 // Connect the MCP server to stdio
-// Note: We use console.error for logs so we don't corrupt the stdio transport stream!
+// Note: We use console.error for logs so we don't corrupt the stdio transport stream.
 const transport = new StdioServerTransport();
 server.connect(transport).then(() => {
-  console.error("[Agentation MCP] Stdio server connected and waiting for AI agent.");
+  console.error("[AgentSight MCP] Stdio server connected and waiting for AI agent.");
 }).catch(err => {
-  console.error("[Agentation MCP] Failed to start:", err);
+  console.error("[AgentSight MCP] Failed to start:", err);
 });

@@ -68,7 +68,7 @@ export const FeedbackPopover: React.FC<FeedbackPopoverProps> = ({
       }}
     >
       <div className="agentsight-popover-header">
-        <span className="agentsight-popover-title">Agentation Note</span>
+        <span className="agentsight-popover-title">AgentSight Note</span>
         {reactComponent && (
           <span className="agentsight-popover-component">
             &lt;{reactComponent}/&gt;

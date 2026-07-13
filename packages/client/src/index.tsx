@@ -1,11 +1,16 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Toolbar } from './components/Toolbar';
+import { AgentSightProvider } from './components/AgentSightProvider';
 import './styles.css';
 
+/**
+ * Imperatively initialize AgentSight by mounting the provider overlay
+ * into a new root element appended to document.body.
+ * Useful when you can't wrap your app with <AgentSightProvider>.
+ */
 export function initAgentSight() {
   if (document.getElementById('agentsight-root')) {
-    console.warn('AgentSight is already initialized.');
+    console.warn('[AgentSight] Already initialized.');
     return;
   }
   
@@ -16,12 +21,14 @@ export function initAgentSight() {
   const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <Toolbar />
+      <AgentSightProvider>
+        <></>
+      </AgentSightProvider>
     </React.StrictMode>
   );
 }
 
-// Auto-initialize if script is loaded directly in browser for dev
+// Auto-expose on window for direct browser script usage
 if (typeof window !== 'undefined') {
   (window as any).initAgentSight = initAgentSight;
 }

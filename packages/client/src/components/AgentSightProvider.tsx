@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useAgentHotkeys } from '../hooks/useAgentHotkeys';
 import { useRuntimeFreeze } from '../hooks/useRuntimeFreeze';
-import { AgentationOverlay } from './AgentationOverlay';
+import { AgentSightOverlay } from './AgentSightOverlay';
 
-interface AgentationProviderProps {
+interface AgentSightProviderProps {
   children: React.ReactNode;
 }
 
-export const AgentationProvider: React.FC<AgentationProviderProps> = ({ children }) => {
+export const AgentSightProvider: React.FC<AgentSightProviderProps> = ({ children }) => {
   const [isAnnotating, setIsAnnotating] = useState(false);
   const { isFrozen, toggleFreeze } = useRuntimeFreeze();
 
@@ -23,7 +23,7 @@ export const AgentationProvider: React.FC<AgentationProviderProps> = ({ children
     <>
       {children}
       {isAnnotating && (
-        <AgentationOverlay
+        <AgentSightOverlay
           isFrozen={isFrozen}
           onClose={() => setIsAnnotating(false)}
         />
