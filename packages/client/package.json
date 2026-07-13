@@ -1,6 +1,6 @@
 {
   "name": "@itsraeyy/agentsight-client",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Visual feedback bridge for AI coding agents",
   "type": "module",
   "main": "dist/index.js",

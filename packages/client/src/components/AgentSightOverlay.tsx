@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useElementPicker } from '../hooks/useElementPicker';
-import { useMultiSelect } from '../hooks/useMultiSelect';
+import { useAgentCursor } from '../hooks/useAgentCursor';
 import { Annotation } from '../hooks/useMarkerPositions';
 import { MarkerLayer } from './MarkerLayer';
 import { HoverTooltip } from './HoverTooltip';
@@ -20,7 +19,7 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [pendingAnnotation, setPendingAnnotation] = useState<Partial<Annotation> | null>(null);
 
-  const handlePick = useCallback((el: HTMLElement) => {
+  const handlePickSingle = useCallback((el: HTMLElement) => {
     if (pendingAnnotation) return;
 
     const selector = getUniqueSelector(el);
@@ -35,39 +34,36 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
     setPendingAnnotation(newAnn);
   }, [pendingAnnotation]);
 
-  const { activate: activatePicker, deactivate: deactivatePicker, hoverState } = useElementPicker({ onPick: handlePick });
-  const { activate: activateMulti, deactivate: deactivateMulti, previewBounds: multiPreview, selectedElements, clearSelection } = useMultiSelect();
+  const handlePickMultiple = useCallback((elements: Element[]) => {
+    if (pendingAnnotation) return;
 
-  useEffect(() => {
-    if (selectedElements.length > 0 && !pendingAnnotation) {
-      const physicalLCA = getDOMLCA(selectedElements);
-      const reactContext = getNamedReactAncestor(physicalLCA);
+    const physicalLCA = getDOMLCA(elements);
+    const reactContext = getNamedReactAncestor(physicalLCA);
 
-      if (reactContext) {
-        const { componentName, containerNode } = reactContext;
-        const selector = getUniqueSelector(containerNode as HTMLElement);
+    if (reactContext) {
+      const { componentName, containerNode } = reactContext;
+      const selector = getUniqueSelector(containerNode as HTMLElement);
 
-        const newAnn: Partial<Annotation> = {
-          id: `ann-${Date.now()}`,
-          element: containerNode as HTMLElement,
-          selector,
-          reactComponent: componentName,
-          html: containerNode.outerHTML,
-        };
-        setPendingAnnotation(newAnn);
-      }
-      clearSelection();
+      const newAnn: Partial<Annotation> = {
+        id: `ann-${Date.now()}`,
+        element: containerNode as HTMLElement,
+        selector,
+        reactComponent: componentName,
+        html: containerNode.outerHTML,
+      };
+      setPendingAnnotation(newAnn);
     }
-  }, [selectedElements, pendingAnnotation, clearSelection]);
+  }, [pendingAnnotation]);
+
+  const { activate, deactivate, cursor, hoverState, dragBounds, isActive } = useAgentCursor({
+    onPickSingle: handlePickSingle,
+    onPickMultiple: handlePickMultiple
+  });
 
   useEffect(() => {
-    activatePicker();
-    activateMulti();
-    return () => {
-      deactivatePicker();
-      deactivateMulti();
-    };
-  }, [activatePicker, activateMulti]);
+    activate();
+    return () => deactivate();
+  }, [activate, deactivate]);
 
   const handleSubmit = (note: string) => {
     if (!pendingAnnotation) return;
@@ -86,10 +82,12 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
     }).catch(err => console.warn('[AgentSight] MCP POST failed', err));
 
     setPendingAnnotation(null);
+    activate(); // Reactivate the cursor tool after submitting
   };
 
   const handleCancel = () => {
     setPendingAnnotation(null);
+    activate();
   };
 
   const pendingRect = pendingAnnotation?.element
@@ -99,29 +97,48 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
   return (
     <div id="agentsight-root">
       {/* Border overlay indicating annotation mode is active */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        border: '4px solid #E57B2A',
-        pointerEvents: 'none',
-        zIndex: 2147483645,
-      }} />
+      {isActive && !pendingAnnotation && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          border: '4px solid #E57B2A',
+          pointerEvents: 'none',
+          zIndex: 2147483645,
+        }} />
+      )}
 
-      {hoverState?.rect && !pendingAnnotation && (
+      {/* Smooth Highlight Overlay */}
+      {isActive && hoverState?.rect && !pendingAnnotation && (
         <HoverTooltip rect={hoverState.rect} label={hoverState.label} />
       )}
       
-      {multiPreview && !pendingAnnotation && (
+      {/* Smooth Drag Area Selection Overlay */}
+      {isActive && dragBounds && !pendingAnnotation && (
         <div 
           className="agentsight-area-preview"
           style={{
             position: 'absolute',
-            top: multiPreview.y,
-            left: multiPreview.x,
-            width: multiPreview.width,
-            height: multiPreview.height,
+            top: dragBounds.y,
+            left: dragBounds.x,
+            width: dragBounds.width,
+            height: dragBounds.height,
             pointerEvents: 'none',
             zIndex: 2147483646
+          }}
+        />
+      )}
+
+      {/* Custom Pointer/Cursor */}
+      {isActive && !pendingAnnotation && cursor.x !== -100 && (
+        <div
+          className="agentsight-custom-cursor"
+          style={{
+            position: 'fixed',
+            left: cursor.x,
+            top: cursor.y,
+            transform: `translate(-50%, -50%) scale(${cursor.isDragging ? 0.8 : 1})`,
+            pointerEvents: 'none',
+            zIndex: 2147483650
           }}
         />
       )}

@@ -77,18 +77,43 @@
   font-weight: 600;
 }
 
+/* ─── CUSTOM CURSOR ─── */
+.agentsight-custom-cursor {
+  width: 16px;
+  height: 16px;
+  background-color: var(--as-orange);
+  border: 2px solid var(--as-beige);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  transition: transform 0.1s ease-out;
+}
+
 /* ─── OVERLAYS ─── */
 .agentsight-highlight-overlay {
-  background: rgba(229, 123, 42, 0.1); /* Muted orange tint */
-  border: 1px solid var(--as-orange);
-  transition: none;
+  background: rgba(229, 123, 42, 0.15); /* Muted orange tint */
+  border: 2px solid var(--as-orange);
+  border-radius: 4px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .agentsight-area-preview {
-  background: rgba(229, 123, 42, 0.1);
-  border: 1px dashed var(--as-charcoal);
-  border-radius: 0px;
-  transition: none;
+  background: rgba(229, 123, 42, 0.15);
+  border: 1px dashed var(--as-orange);
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
+  transition: none; /* Dragging must be perfectly 1:1, no lag */
+}
+
+/* ─── TOOLTIP ─── */
+.agentsight-hover-tooltip {
+  background: var(--as-charcoal);
+  color: var(--as-beige);
+  padding: 4px 8px;
+  font-family: var(--as-mono);
+  font-size: 11px;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--as-shadow);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ─── MARKERS ─── */
