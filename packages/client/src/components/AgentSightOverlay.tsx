@@ -159,7 +159,21 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
 
       {/* Smooth Highlight Overlay */}
       {isActive && hoverState?.rect && !pendingAnnotation && (
-        <HoverTooltip rect={hoverState.rect} label={hoverState.label} />
+        <>
+          <div 
+            className="agentsight-highlight-overlay"
+            style={{
+              position: 'absolute',
+              top: hoverState.rect.top + window.scrollY,
+              left: hoverState.rect.left + window.scrollX,
+              width: hoverState.rect.width,
+              height: hoverState.rect.height,
+              pointerEvents: 'none',
+              zIndex: 2147483645
+            }}
+          />
+          <HoverTooltip rect={hoverState.rect} label={hoverState.label} />
+        </>
       )}
       
       {/* Smooth Drag Area Selection Overlay */}
