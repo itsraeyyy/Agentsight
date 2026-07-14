@@ -2,13 +2,48 @@
 // packages/mcp/src/index.ts
 import express from 'express';
 import cors from 'cors';
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import fs from 'fs';
+import path from 'path';
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 
 // --- EPHEMERAL STATE ---
-// This is our "database". It wipes clean whenever the process restarts.
+interface FeedbackEntry {
+  id: number;
+  timestamp: string;
+  payload: string;
+}
+
+const MAX_HISTORY = 10;
+const feedbackQueue: FeedbackEntry[] = [];
+let nextFeedbackId = 1;
+
 let currentVisualFeedback: string | null = null;
 const feedbackHistory: string[] = [];
+
+// Helper for Auto-File Path Resolution
+function findFile(dir: string, name: string): string | null {
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist' || entry.name === 'build') continue;
+      
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const res = findFile(fullPath, name);
+        if (res) return res;
+      } else if (entry.isFile()) {
+        if (entry.name === `${name}.tsx` || entry.name === `${name}.jsx` || entry.name === `${name}.ts` || entry.name === `${name}.js`) {
+          return fullPath;
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore permissions or missing directories
+  }
+  return null;
+}
 
 // --- 1. SET UP THE EXPRESS BRIDGE (Receives data from browser) ---
 const app = express();
@@ -16,14 +51,44 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/api/feedback', (req, res) => {
-  const { markdownPayload } = req.body;
+  const { markdownPayload, componentName } = req.body;
   if (!markdownPayload) {
     return res.status(400).json({ error: 'Payload missing' });
   }
 
+  let finalPayload = markdownPayload;
+
+  // Auto-File Path Resolution
+  let resolvedComponent = componentName;
+  if (!resolvedComponent) {
+    // Extract from string like: **React Component:** `NavigationWrapper -> App`
+    const match = markdownPayload.match(/\*\*React Component:\*\* `([^`\s→]+)/);
+    if (match) {
+      resolvedComponent = match[1];
+    }
+  }
+
+  if (resolvedComponent) {
+    // We search from the project root where the server is running
+    const fileLocation = findFile(process.cwd(), resolvedComponent);
+    if (fileLocation) {
+      finalPayload += `\n\n**Auto-Resolved File Path:** \`${fileLocation}\``;
+    }
+  }
+
   // Store the latest context ephemerally
-  currentVisualFeedback = markdownPayload;
-  feedbackHistory.push(markdownPayload);
+  currentVisualFeedback = finalPayload;
+  feedbackHistory.push(finalPayload);
+  
+  // Update feedback queue
+  feedbackQueue.unshift({
+    id: nextFeedbackId++,
+    timestamp: new Date().toISOString(),
+    payload: finalPayload
+  });
+  if (feedbackQueue.length > MAX_HISTORY) {
+    feedbackQueue.pop();
+  }
   
   console.error(`[AgentSight MCP] Received new visual feedback payload.`);
   return res.json({ success: true });
@@ -32,8 +97,8 @@ app.post('/api/feedback', (req, res) => {
 let activeExpressServer: any = null;
 
 const startExpressServer = (port: number) => {
-  if (port > 3015) {
-    console.error('[AgentSight MCP] Error: Could not find an open port in range 3010-3015.');
+  if (port > 3020) {
+    console.error('[AgentSight MCP] Error: Could not find an open port in range 3010-3020.');
     process.exit(1);
   }
 
@@ -77,11 +142,34 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
+// Expose the MCP Resource (The @ Command)
+// Provides a fast, direct way to pull context without needing to call a tool.
+server.resource(
+  "latest-feedback",
+  new ResourceTemplate("agentsight://feedback/latest", { list: undefined }),
+  async (uri) => {
+    if (!currentVisualFeedback) {
+      return {
+        contents: [{
+          uri: uri.href,
+          text: "No visual feedback is currently active. The developer hasn't highlighted anything yet."
+        }]
+      };
+    }
+    return {
+      contents: [{
+        uri: uri.href,
+        text: currentVisualFeedback
+      }]
+    };
+  }
+);
+
 // Expose a tool for the agent to fetch the latest highlighted bug
 server.tool(
   "get_latest_visual_feedback",
   "Fetches the most recent visual UI bug highlighted by the developer in the browser.",
-  {}, // No parameters needed
+  {}, 
   async () => {
     if (!currentVisualFeedback) {
       return {
@@ -95,6 +183,26 @@ server.tool(
   }
 );
 
+// Expose a tool for the agent to fetch the stack of recent UI bugs
+server.tool(
+  "get_feedback_queue",
+  "Fetches the stack of recent visual UI bugs highlighted by the developer in the browser (up to the last 10). This allows you to process multiple visual bugs in one go.",
+  {},
+  async () => {
+    if (feedbackQueue.length === 0) {
+      return {
+        content: [{ type: "text", text: "No visual feedback is currently active. The developer hasn't highlighted anything yet." }]
+      };
+    }
+
+    const queueText = feedbackQueue.map(f => `--- Feedback #${f.id} (${f.timestamp}) ---\n${f.payload}`).join('\n\n');
+    
+    return {
+      content: [{ type: "text", text: queueText }]
+    };
+  }
+);
+
 // Expose a tool to clear the state once the AI has fixed it
 server.tool(
   "clear_visual_feedback",
@@ -102,6 +210,7 @@ server.tool(
   {},
   async () => {
     currentVisualFeedback = null;
+    feedbackQueue.length = 0; // Clear the queue too
     return {
       content: [{ type: "text", text: "State cleared successfully." }]
     };

@@ -81,20 +81,23 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
       const updatedAnnotations = [...prev, finalAnn];
       
       const payload = compileMarkdown(updatedAnnotations, 'standard');
-      navigator.clipboard.writeText(payload).catch(() => {});
+      const triggerPhrase = note
+        ? `Fix the visual bug: "${note}" using @agentsight/latest`
+        : `Fix the visual bug using @agentsight/latest`;
+      navigator.clipboard.writeText(triggerPhrase).catch(() => {});
 
       // Send payload to the AgentSight MCP bridge across all possible ports
-      const ports = [3010, 3011, 3012, 3013, 3014, 3015];
+      const ports = [3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020];
       Promise.allSettled(
         ports.map(port => 
           fetch(`http://localhost:${port}/api/feedback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ markdownPayload: payload })
+            body: JSON.stringify({ markdownPayload: payload, componentName: finalAnn.reactComponent })
           })
         )
       ).then(results => {
-        const anySuccess = results.some(r => r.status === 'fulfilled' && r.value.ok);
+        const anySuccess = results.some(r => r.status === 'fulfilled' && (r.value as Response).ok);
         if (anySuccess) {
           setToast({ message: 'Feedback sent to AgentSight MCP', type: 'success' });
         } else {

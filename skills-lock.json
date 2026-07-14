@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "conversion-copywriting": {
+      "source": "guia-matthieu/clawfu-skills",
+      "sourceType": "github",
+      "skillPath": "skills/content/conversion-copywriting/SKILL.md",
+      "computedHash": "bb6e50892960c4f1d1c375a11863b357d4319fb3f004bf8b894b861f042fd0ae"
+    },
     "design-engineer": {
       "source": "farming-labs/design-eng-skills",
       "sourceType": "github",
