@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@itsraeyy/agentsight-mcp"
+        "@itsraeyy/agentsight-mcp@latest"
       ]
     }
   }

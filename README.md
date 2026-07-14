@@ -24,7 +24,7 @@ This will automatically:
 - 🔌 **Configure your IDE's MCP server** (Cursor / Windsurf)
 - 📦 **Install the package** as a dev dependency
 
-Run your dev server, press `Ctrl+Shift+A` in the browser, and start pointing at bugs.
+Run your dev server, press `Alt+A` (or `Option+A` on Mac) in the browser, and start pointing at bugs.
 
 <details>
 <summary><strong>Manual Setup</strong> (if you prefer full control)</summary>
@@ -112,7 +112,7 @@ The bridge listens on `http://localhost:3010` for browser payloads and exposes t
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+Shift+A` / `Cmd+Shift+A` | Toggle annotation mode |
+| `Alt+A` / `Option+A` | Toggle annotation mode |
 | `Space` | Toggle runtime freeze |
 | `Escape` | Cancel / close current action |
 | `Enter` | Submit annotation note |

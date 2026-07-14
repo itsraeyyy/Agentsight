@@ -28,8 +28,8 @@ export function useAgentHotkeys(
       // If they are typing, ignore all other hotkeys so normal data entry isn't hijacked
       if (isTyping) return;
 
-      // 3. Cmd+Shift+A (Mac) or Ctrl+Shift+A (Windows): Toggle Annotation Mode
-      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
+      // 3. Alt+A (Windows) or Option+A (Mac): Toggle Annotation Mode
+      if (event.altKey && event.key.toLowerCase() === 'a') {
         event.preventDefault();
         onToggleAnnotation();
       }

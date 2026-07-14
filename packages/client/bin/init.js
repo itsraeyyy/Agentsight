@@ -325,7 +325,7 @@ async function main() {
 
   console.log('');
   console.log('  🚀 AgentSight is live!');
-  console.log('  Run your dev server and press Ctrl+Shift+A in the browser.');
+  console.log('  Run your dev server and press Alt+A in the browser.');
   console.log('');
 }
 
