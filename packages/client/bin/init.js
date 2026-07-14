@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
+import readline from 'node:readline';
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
@@ -184,19 +185,26 @@ function injectProvider() {
 
 // ─── STEP 2: CONFIGURE IDE ───────────────────────────────────────────────────
 
-function configureIDE() {
-  let configured = false;
-
+async function configureIDE() {
   const ideConfigs = [
     { dir: '.cursor', file: 'mcp.json', name: 'Cursor' },
     { dir: '.windsurf', file: 'mcp.json', name: 'Windsurf' },
     { dir: '.agents', file: 'mcp.json', name: 'Antigravity' },
+    { dir: '', file: 'cline_mcp_settings.json', name: 'Cline' },
+    { dir: '', file: 'roo_mcp_settings.json', name: 'Roo Code' }
   ];
 
+  let configured = false;
+
+  // 1. Auto-detect and configure
   for (const ide of ideConfigs) {
-    const ideDir = path.join(CWD, ide.dir);
-    if (fs.existsSync(ideDir)) {
-      writeMcpConfig(path.join(ideDir, ide.file), ide.name);
+    const targetDir = path.join(CWD, ide.dir);
+    // Auto-detect: if the specific IDE directory exists, or if it's a VS Code extension and .vscode exists
+    if (ide.dir && fs.existsSync(targetDir)) {
+      writeMcpConfig(path.join(targetDir, ide.file), ide.name);
+      configured = true;
+    } else if (!ide.dir && fs.existsSync(path.join(CWD, '.vscode'))) {
+      writeMcpConfig(path.join(targetDir, ide.file), ide.name);
       configured = true;
     }
   }
@@ -208,23 +216,49 @@ function configureIDE() {
     configured = true;
   }
 
-  // If no IDE folder found, don't blindly create a .cursor folder.
-  // Instead, give instructions for popular editors.
-  if (!configured) {
-    console.log('⚠️  No known AI IDE configuration folders detected (Cursor, Windsurf, Antigravity).');
-    console.log('   Please configure the MCP server manually.');
-    console.log('');
-    console.log('   For Claude Code, run:');
-    console.log('   claude mcp add agentsight npx -y @itsraeyy/agentsight-mcp');
-    console.log('');
-    console.log('   For others, add this to your MCP settings:');
-    console.log(JSON.stringify({
-      mcpServers: {
-        agentsight: MCP_SERVER_CONFIG
+  if (configured) return;
+
+  // 2. Prompt if no known IDE configuration folders detected
+  console.log('⚠️  Could not automatically detect your AI IDE.');
+  console.log('Please select your AI IDE or Assistant to configure MCP:');
+  console.log('  1) Cursor');
+  console.log('  2) Windsurf');
+  console.log('  3) Cline (VS Code)');
+  console.log('  4) Roo Code (VS Code)');
+  console.log('  5) Claude Code (CLI)');
+  console.log('  6) None / Manual');
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  
+  return new Promise((resolve) => {
+    rl.question('Select an option (1-6): ', (answer) => {
+      rl.close();
+      const choice = answer.trim();
+      let targetIde = null;
+      
+      switch (choice) {
+        case '1': targetIde = ideConfigs[0]; break;
+        case '2': targetIde = ideConfigs[1]; break;
+        case '3': targetIde = ideConfigs[3]; break;
+        case '4': targetIde = ideConfigs[4]; break;
+        case '5':
+          console.log('\nFor Claude Code, run this command manually:');
+          console.log('claude mcp add agentsight npx -y @itsraeyy/agentsight-mcp\n');
+          return resolve();
+        default:
+          console.log('\nAdd this to your MCP settings manually:');
+          console.log(JSON.stringify({ mcpServers: { agentsight: MCP_SERVER_CONFIG } }, null, 2), '\n');
+          return resolve();
       }
-    }, null, 2));
-    console.log('');
-  }
+
+      if (targetIde) {
+        const targetDir = path.join(CWD, targetIde.dir);
+        if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+        writeMcpConfig(path.join(targetDir, targetIde.file), targetIde.name);
+      }
+      resolve();
+    });
+  });
 }
 
 function writeMcpConfig(configPath, ideName) {
@@ -279,14 +313,14 @@ function ensureInstalled() {
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
-function main() {
+async function main() {
   console.log('');
   console.log('  👁️  AgentSight — Visual Feedback for AI Coding Agents');
   console.log('  ──────────────────────────────────────────────────────');
   console.log('');
 
   injectProvider();
-  configureIDE();
+  await configureIDE();
   ensureInstalled();
 
   console.log('');
@@ -295,4 +329,4 @@ function main() {
   console.log('');
 }
 
-main();
+main().catch(console.error);
