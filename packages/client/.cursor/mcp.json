@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agentsight": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@itsraeyy/agentsight-mcp"
+      ]
+    }
+  }
+}

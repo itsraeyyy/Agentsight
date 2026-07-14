@@ -1,6 +1,6 @@
 {
   "name": "@itsraeyy/agentsight-client",
-  "version": "1.0.4",
+  "version": "1.0.10",
   "description": "Visual feedback bridge for AI coding agents",
   "type": "module",
   "main": "dist/index.js",
@@ -15,13 +15,14 @@
     "./styles.css": "./dist/styles.css"
   },
   "bin": {
-    "agentsight-client": "./bin/init.js"
+    "agentsight-client": "bin/init.js"
   },
   "files": [
     "dist",
     "bin"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc && node -e \"require('fs').copyFileSync('src/styles.css', 'dist/styles.css')\"",
     "dev": "tsc -w"
   },
@@ -30,8 +31,9 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@itsraeyy/agentsight-client": "^1.0.4",
     "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0"
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.0.0"
   }
 }

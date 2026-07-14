@@ -29,9 +29,22 @@ app.post('/api/feedback', (req, res) => {
   return res.json({ success: true });
 });
 
-app.listen(3010, () => {
+const expressServer = app.listen(3010, () => {
   console.error('[AgentSight MCP] Browser receiver listening on http://localhost:3010');
 });
+
+function cleanupAndExit() {
+  console.error('[AgentSight MCP] Shutting down express server and exiting...');
+  expressServer.close(() => {
+    process.exit(0);
+  });
+  // Force exit if it takes too long
+  setTimeout(() => process.exit(0), 1000).unref();
+}
+
+process.on('SIGINT', cleanupAndExit);
+process.on('SIGTERM', cleanupAndExit);
+process.stdin.on('close', cleanupAndExit);
 
 // --- 2. SET UP THE MCP SERVER (Provides data to the AI IDE) ---
 const server = new McpServer({

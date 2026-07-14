@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { execSync } from 'node:child_process';
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
@@ -162,27 +163,43 @@ function injectProvider() {
 function configureIDE() {
   let configured = false;
 
-  // Cursor
-  const cursorDir = path.join(CWD, '.cursor');
-  if (fs.existsSync(cursorDir)) {
-    writeMcpConfig(path.join(cursorDir, 'mcp.json'), 'Cursor');
-    configured = true;
-  }
+  const ideConfigs = [
+    { dir: '.cursor', file: 'mcp.json', name: 'Cursor' },
+    { dir: '.windsurf', file: 'mcp.json', name: 'Windsurf' },
+    { dir: '.agents', file: 'mcp.json', name: 'Antigravity' },
+  ];
 
-  // Windsurf
-  const windsurfDir = path.join(CWD, '.windsurf');
-  if (fs.existsSync(windsurfDir)) {
-    writeMcpConfig(path.join(windsurfDir, 'mcp.json'), 'Windsurf');
-    configured = true;
-  }
-
-  // If no IDE folder found, default to creating .cursor/mcp.json
-  // since Cursor is the most common AI IDE
-  if (!configured) {
-    if (!fs.existsSync(cursorDir)) {
-      fs.mkdirSync(cursorDir, { recursive: true });
+  for (const ide of ideConfigs) {
+    const ideDir = path.join(CWD, ide.dir);
+    if (fs.existsSync(ideDir)) {
+      writeMcpConfig(path.join(ideDir, ide.file), ide.name);
+      configured = true;
     }
-    writeMcpConfig(path.join(cursorDir, 'mcp.json'), 'Cursor');
+  }
+
+  // Antigravity global config
+  const antigravityGlobalDir = path.join(os.homedir(), '.gemini', 'config');
+  if (fs.existsSync(antigravityGlobalDir)) {
+    writeMcpConfig(path.join(antigravityGlobalDir, 'mcp_config.json'), 'Antigravity (Global)');
+    configured = true;
+  }
+
+  // If no IDE folder found, don't blindly create a .cursor folder.
+  // Instead, give instructions for popular editors.
+  if (!configured) {
+    console.log('⚠️  No known AI IDE configuration folders detected (Cursor, Windsurf, Antigravity).');
+    console.log('   Please configure the MCP server manually.');
+    console.log('');
+    console.log('   For Claude Code, run:');
+    console.log('   claude mcp add agentsight npx -y @itsraeyy/agentsight-mcp');
+    console.log('');
+    console.log('   For others, add this to your MCP settings:');
+    console.log(JSON.stringify({
+      mcpServers: {
+        agentsight: MCP_SERVER_CONFIG
+      }
+    }, null, 2));
+    console.log('');
   }
 }
 

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useAgentHotkeys } from '../hooks/useAgentHotkeys';
 import { useRuntimeFreeze } from '../hooks/useRuntimeFreeze';

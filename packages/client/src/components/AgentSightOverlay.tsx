@@ -69,17 +69,22 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
     if (!pendingAnnotation) return;
 
     const finalAnn: Annotation = { ...pendingAnnotation, note } as Annotation;
-    setAnnotations(prev => [...prev, finalAnn]);
     
-    const payload = compileMarkdown([finalAnn], 'standard');
-    navigator.clipboard.writeText(payload).catch(() => {});
+    setAnnotations(prev => {
+      const updatedAnnotations = [...prev, finalAnn];
+      
+      const payload = compileMarkdown(updatedAnnotations, 'standard');
+      navigator.clipboard.writeText(payload).catch(() => {});
 
-    // Send payload to the AgentSight MCP bridge
-    fetch('http://localhost:3010/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markdownPayload: payload })
-    }).catch(err => console.warn('[AgentSight] MCP POST failed', err));
+      // Send payload to the AgentSight MCP bridge
+      fetch('http://localhost:3010/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdownPayload: payload })
+      }).catch(err => console.warn('[AgentSight] MCP POST failed', err));
+
+      return updatedAnnotations;
+    });
 
     setPendingAnnotation(null);
     activate(); // Reactivate the cursor tool after submitting
