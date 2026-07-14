@@ -9,9 +9,6 @@ import { execSync } from 'node:child_process';
 
 const CWD = process.cwd();
 
-const AGENTSIGHT_IMPORT = `import { AgentSightProvider } from '@itsraeyy/agentsight-client';`;
-const AGENTSIGHT_JSX = `{process.env.NODE_ENV === 'development' && <AgentSightProvider />}`;
-
 const MCP_SERVER_CONFIG = {
   command: 'npx',
   args: ['-y', '@itsraeyy/agentsight-mcp'],
@@ -70,6 +67,8 @@ function injectProvider() {
   const framework = detectFramework();
 
   let layoutFile = null;
+  let importStatement = `import { AgentSightProvider } from '@itsraeyy/agentsight-client';`;
+  let jsxStatement = `{process.env.NODE_ENV === 'development' && <AgentSightProvider />}`;
 
   if (framework === 'nextjs') {
     // Next.js App Router — look for root layout
@@ -79,6 +78,31 @@ function injectProvider() {
       'src/app/layout.tsx',
       'src/app/layout.jsx',
     ]);
+
+    if (layoutFile) {
+      const isSrc = layoutFile.relative.startsWith('src/');
+      const componentsDir = path.join(CWD, isSrc ? 'src/components' : 'components');
+      
+      if (!fs.existsSync(componentsDir)) {
+        fs.mkdirSync(componentsDir, { recursive: true });
+      }
+
+      const isTs = layoutFile.relative.endsWith('.tsx');
+      const ext = isTs ? '.tsx' : '.jsx';
+      const wrapperPath = path.join(componentsDir, `AgentSightWrapper${ext}`);
+      
+      const wrapperContent = `"use client";\n\nimport { AgentSightProvider } from '@itsraeyy/agentsight-client';\n\nexport default function AgentSightWrapper() {\n  return <AgentSightProvider />;\n}\n`;
+
+      if (!fs.existsSync(wrapperPath)) {
+        fs.writeFileSync(wrapperPath, wrapperContent, 'utf8');
+        console.log(`✅ Created ${path.relative(CWD, wrapperPath)}`);
+      } else {
+        console.log(`ℹ️  AgentSightWrapper already exists at ${path.relative(CWD, wrapperPath)}`);
+      }
+
+      importStatement = `import AgentSightWrapper from '../components/AgentSightWrapper';`;
+      jsxStatement = `{process.env.NODE_ENV === 'development' && <AgentSightWrapper />}`;
+    }
   } else if (framework === 'vite') {
     // Vite — look for root App or main entry
     layoutFile = findFirst([
@@ -102,8 +126,8 @@ function injectProvider() {
   let content = fs.readFileSync(layoutFile.absolute, 'utf8');
 
   // Idempotent — don't inject twice
-  if (content.includes('AgentSightProvider')) {
-    console.log(`ℹ️  AgentSightProvider already exists in ${layoutFile.relative}`);
+  if (content.includes('AgentSightProvider') || content.includes('AgentSightWrapper')) {
+    console.log(`ℹ️  AgentSight already exists in ${layoutFile.relative}`);
     return;
   }
 
@@ -114,11 +138,11 @@ function injectProvider() {
     const endOfImportLine = content.indexOf('\n', lastImportIndex + 1);
     content =
       content.slice(0, endOfImportLine + 1) +
-      AGENTSIGHT_IMPORT + '\n' +
+      importStatement + '\n' +
       content.slice(endOfImportLine + 1);
   } else {
     // No imports found — add at the very top
-    content = AGENTSIGHT_IMPORT + '\n' + content;
+    content = importStatement + '\n' + content;
   }
 
   // Inject the component based on framework
@@ -127,11 +151,11 @@ function injectProvider() {
     if (content.includes('</body>')) {
       content = content.replace(
         '</body>',
-        `        ${AGENTSIGHT_JSX}\n      </body>`
+        `        ${jsxStatement}\n      </body>`
       );
     } else {
       console.log(`⚠️  Could not find </body> tag in ${layoutFile.relative}.`);
-      console.log(`   Please manually add: ${AGENTSIGHT_JSX}\n`);
+      console.log(`   Please manually add: ${jsxStatement}\n`);
       return;
     }
   } else if (framework === 'vite') {
@@ -144,18 +168,18 @@ function injectProvider() {
       if (lastClose !== -1) {
         content =
           content.slice(0, lastClose) +
-          `  ${AGENTSIGHT_JSX}\n      ` +
+          `  ${jsxStatement}\n      ` +
           content.slice(lastClose);
       }
     } else {
       console.log(`⚠️  Could not find a suitable injection point in ${layoutFile.relative}.`);
-      console.log(`   Please manually add: ${AGENTSIGHT_JSX}\n`);
+      console.log(`   Please manually add: ${jsxStatement}\n`);
       return;
     }
   }
 
   fs.writeFileSync(layoutFile.absolute, content, 'utf8');
-  console.log(`✅ Injected AgentSightProvider into ${layoutFile.relative}`);
+  console.log(`✅ Injected AgentSight into ${layoutFile.relative}`);
 }
 
 // ─── STEP 2: CONFIGURE IDE ───────────────────────────────────────────────────

@@ -29,15 +29,40 @@ app.post('/api/feedback', (req, res) => {
   return res.json({ success: true });
 });
 
-const expressServer = app.listen(3010, () => {
-  console.error('[AgentSight MCP] Browser receiver listening on http://localhost:3010');
-});
+let activeExpressServer: any = null;
+
+const startExpressServer = (port: number) => {
+  if (port > 3015) {
+    console.error('[AgentSight MCP] Error: Could not find an open port in range 3010-3015.');
+    process.exit(1);
+  }
+
+  const server = app.listen(port, () => {
+    console.error(`[AgentSight MCP] Browser receiver listening on http://localhost:${port}`);
+    activeExpressServer = server;
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[AgentSight MCP] Port ${port} is in use, trying ${port + 1}...`);
+      startExpressServer(port + 1);
+    } else {
+      console.error(`[AgentSight MCP] Express server error:`, err);
+    }
+  });
+};
+
+startExpressServer(3010);
 
 function cleanupAndExit() {
   console.error('[AgentSight MCP] Shutting down express server and exiting...');
-  expressServer.close(() => {
+  if (activeExpressServer) {
+    activeExpressServer.close(() => {
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
   // Force exit if it takes too long
   setTimeout(() => process.exit(0), 1000).unref();
 }

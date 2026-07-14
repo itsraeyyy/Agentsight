@@ -53,7 +53,15 @@ export function extractStyles(element: HTMLElement): ExtractedStyles {
       const value = computed.getPropertyValue(
         prop.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
       );
-      if (value && value !== 'none' && value !== 'normal' && value !== 'auto') {
+      if (
+        value && 
+        value !== 'none' && 
+        value !== 'normal' && 
+        value !== 'auto' &&
+        value !== '0px' &&
+        value !== 'rgba(0, 0, 0, 0)' &&
+        value !== 'transparent'
+      ) {
         result[prop] = value;
       }
     }
@@ -65,7 +73,20 @@ export function extractStyles(element: HTMLElement): ExtractedStyles {
   for (let i = 0; i < computed.length; i++) {
     const prop = computed[i];
     const value = computed.getPropertyValue(prop);
-    if (value && value !== '' && value !== 'none') {
+    if (
+      value && 
+      value !== '' && 
+      value !== 'none' && 
+      value !== 'normal' && 
+      value !== 'auto' &&
+      value !== '0px' &&
+      value !== 'rgba(0, 0, 0, 0)' &&
+      value !== 'transparent' &&
+      !prop.startsWith('-webkit-') &&
+      !prop.startsWith('-moz-') &&
+      !prop.startsWith('-ms-') &&
+      !prop.startsWith('-o-')
+    ) {
       all[prop] = value;
     }
   }

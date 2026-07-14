@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAgentCursor } from '../hooks/useAgentCursor';
 import { Annotation } from '../hooks/useMarkerPositions';
 import { MarkerLayer } from './MarkerLayer';
@@ -18,6 +19,12 @@ interface AgentSightOverlayProps {
 export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, onClose }) => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [pendingAnnotation, setPendingAnnotation] = useState<Partial<Annotation> | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handlePickSingle = useCallback((el: HTMLElement) => {
     if (pendingAnnotation) return;
@@ -76,12 +83,25 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
       const payload = compileMarkdown(updatedAnnotations, 'standard');
       navigator.clipboard.writeText(payload).catch(() => {});
 
-      // Send payload to the AgentSight MCP bridge
-      fetch('http://localhost:3010/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdownPayload: payload })
-      }).catch(err => console.warn('[AgentSight] MCP POST failed', err));
+      // Send payload to the AgentSight MCP bridge across all possible ports
+      const ports = [3010, 3011, 3012, 3013, 3014, 3015];
+      Promise.allSettled(
+        ports.map(port => 
+          fetch(`http://localhost:${port}/api/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ markdownPayload: payload })
+          })
+        )
+      ).then(results => {
+        const anySuccess = results.some(r => r.status === 'fulfilled' && r.value.ok);
+        if (anySuccess) {
+          setToast({ message: 'Feedback sent to AgentSight MCP', type: 'success' });
+        } else {
+          setToast({ message: 'Failed to connect to AgentSight MCP. Is it running?', type: 'error' });
+        }
+        setTimeout(() => setToast(null), 3000);
+      });
 
       return updatedAnnotations;
     });
@@ -99,8 +119,30 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
     ? pendingAnnotation.element.getBoundingClientRect()
     : null;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div id="agentsight-root">
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          padding: '12px 24px',
+          background: toast.type === 'success' ? '#22c55e' : '#ef4444',
+          color: 'white',
+          borderRadius: '8px',
+          fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 2147483651,
+          pointerEvents: 'none',
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Border overlay indicating annotation mode is active */}
       {isActive && !pendingAnnotation && (
         <div style={{
@@ -158,6 +200,7 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
           onCancel={handleCancel}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
