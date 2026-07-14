@@ -200,11 +200,15 @@ export const AgentSightOverlay: React.FC<AgentSightOverlayProps> = ({ isFrozen, 
             position: 'fixed',
             left: cursor.x,
             top: cursor.y,
-            transform: `translate(-50%, -50%) scale(${cursor.isDragging ? 0.8 : 1})`,
+            transform: `translate(-2px, -2px) scale(${cursor.isDragging ? 0.8 : 1})`,
             pointerEvents: 'none',
             zIndex: 2147483650
           }}
-        />
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--as-orange)" stroke="var(--as-beige)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/>
+          </svg>
+        </div>
       )}
 
       <MarkerLayer annotations={annotations} />
